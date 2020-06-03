@@ -1,0 +1,17 @@
+[package]
+name = "img-mini-rs"
+version = "0.1.0"
+authors = ["guofangchao <guofangchao@daling.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "2"
+actix-rt = "1"
+actix-multipart = "0.2.0"
+futures = "0.3.5"
+openssl = "0.10.29"
+curl = "0.4.29"
+config = "0.10.1"
+image = "0.23.4"
