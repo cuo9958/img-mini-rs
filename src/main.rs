@@ -20,6 +20,7 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
         let content_type = field.content_disposition().unwrap();
         println!("content_type:{}", content_type);
         let formName = content_type.get_name().unwrap();
+        //TODO：名称判断和类型判断
         println!("name:{:?}", formName);
         if formName == "file" {
             let filename = content_type.get_filename().unwrap_or("");
@@ -98,6 +99,8 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_server=info,actix_web=info");
 
     let ip = "0.0.0.0:3000";
+
+    println!("启动服务:{}", ip);
 
     HttpServer::new(|| {
         App::new()
