@@ -39,7 +39,7 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
 
     let img = image::open(filepath).unwrap();
     let mut buffer = Vec::new();
-    img.write_to(&mut buffer, ImageFormat::JPEG).unwrap();
+    img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
     Ok(HttpResponse::Ok().body(buffer))
 }
 
