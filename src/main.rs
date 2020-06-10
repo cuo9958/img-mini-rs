@@ -25,8 +25,7 @@ fn imageFN(fromBuf: &[u8]) -> Vec<u8> {
 
 //接受form提交的图片，压缩之后返回
 async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
-    // iterate over multipart stream
-    let mut filepath = String::from("");
+    let mut buffer = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
         println!("content_type:{}", content_type);
@@ -34,21 +33,12 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
         //TODO：名称判断和类型判断
         println!("name:{:?}", formName);
         if formName == "file" {
-            let filename = content_type.get_filename().unwrap_or("");
-            println!("filename:{}", filename);
-            filepath = format!("./tmp/{}", filename);
-            let filepath2 = filepath.clone();
-            println!("filepath:{}", filepath2);
-            let mut f = web::block(|| File::create(filepath2)).await.unwrap();
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
-                f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+                buffer.extend_from_slice(&data);
             }
         }
     }
-    let mut file2 = File::open(&filepath).expect("打开失败");
-    let mut buffer = Vec::new();
-    file2.read_to_end(&mut buffer).expect("文件读取失败");
     let buf2 = imageFN(&buffer);
     Ok(HttpResponse::Ok().body(buf2))
 }
