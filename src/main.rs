@@ -6,11 +6,22 @@ use futures::{StreamExt, TryStreamExt};
 
 use actix_multipart::Multipart;
 
-use std::io::Write;
+use std::fs::File;
+use std::io::{Read, Write};
 
 use image::ImageFormat;
 
 use curl::easy::Easy;
+
+/**
+ * 图片处理方法
+ */
+fn imageFN(fromBuf: &[u8]) -> Vec<u8> {
+    let img = image::load_from_memory_with_format(fromBuf, ImageFormat::Jpeg).unwrap();
+    let mut buffer = Vec::new();
+    img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
+    buffer
+}
 
 //接受form提交的图片，压缩之后返回
 async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -28,20 +39,18 @@ async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
             filepath = format!("./tmp/{}", filename);
             let filepath2 = filepath.clone();
             println!("filepath:{}", filepath2);
-            let mut f = web::block(|| std::fs::File::create(filepath2))
-                .await
-                .unwrap();
+            let mut f = web::block(|| File::create(filepath2)).await.unwrap();
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
                 f = web::block(move || f.write_all(&data).map(|_| f)).await?;
             }
         }
     }
-
-    let img = image::open(filepath).unwrap();
+    let mut file2 = File::open(&filepath).expect("打开失败");
     let mut buffer = Vec::new();
-    img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
-    Ok(HttpResponse::Ok().body(buffer))
+    file2.read_to_end(&mut buffer).expect("文件读取失败");
+    let buf2 = imageFN(&buffer);
+    Ok(HttpResponse::Ok().body(buf2))
 }
 
 fn index() -> HttpResponse {
@@ -82,7 +91,8 @@ fn index2() -> HttpResponse {
         transfer.perform().unwrap();
     }
     println!("文件下载完成:{}", buffer.len());
-    HttpResponse::Ok().body(buffer)
+    let buf2 = imageFN(&buffer);
+    HttpResponse::Ok().body(buf2)
 }
 async fn index3(mut body: web::Payload) -> Result<HttpResponse, Error> {
     let mut bytes = web::BytesMut::new();
