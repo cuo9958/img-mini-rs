@@ -6,19 +6,9 @@ use futures::{StreamExt, TryStreamExt};
 
 use actix_multipart::Multipart;
 
-use image::ImageFormat;
-
 use curl::easy::Easy;
 
-/**
- * 图片处理方法
- */
-fn image_fn(from_buf: &[u8]) -> Vec<u8> {
-    let img = image::load_from_memory_with_format(from_buf, ImageFormat::Jpeg).unwrap();
-    let mut buffer = Vec::new();
-    img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
-    buffer
-}
+mod image_pro;
 
 //接受form提交的图片，压缩之后返回
 async fn form_image(mut payload: Multipart) -> Result<HttpResponse, Error> {
@@ -36,7 +26,7 @@ async fn form_image(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let buf2 = image_fn(&buffer);
+    let buf2 = image_pro::image_fn(&buffer);
     Ok(HttpResponse::Ok().body(buf2))
 }
 
@@ -63,7 +53,7 @@ fn curl_image() -> HttpResponse {
         transfer.perform().unwrap();
     }
     println!("文件下载完成:{}", buffer.len());
-    let buf2 = image_fn(&buffer);
+    let buf2 = image_pro::image_fn(&buffer);
     HttpResponse::Ok().body(buf2)
 }
 //直接上传文件
@@ -73,7 +63,7 @@ async fn bin_image(mut body: web::Payload) -> Result<HttpResponse, Error> {
         bytes.extend_from_slice(&item?);
     }
     println!("Chunk: {:?}", bytes.len());
-    let buf2 = image_fn(&bytes);
+    let buf2 = image_pro::image_fn(&bytes);
     Ok(HttpResponse::Ok().body(buf2))
 }
 
