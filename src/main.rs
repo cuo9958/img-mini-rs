@@ -6,9 +6,6 @@ use futures::{StreamExt, TryStreamExt};
 
 use actix_multipart::Multipart;
 
-use std::fs::File;
-use std::io::{Read, Write};
-
 use image::ImageFormat;
 
 use curl::easy::Easy;
@@ -16,51 +13,36 @@ use curl::easy::Easy;
 /**
  * 图片处理方法
  */
-fn imageFN(fromBuf: &[u8]) -> Vec<u8> {
-    let img = image::load_from_memory_with_format(fromBuf, ImageFormat::Jpeg).unwrap();
+fn image_fn(from_buf: &[u8]) -> Vec<u8> {
+    let img = image::load_from_memory_with_format(from_buf, ImageFormat::Jpeg).unwrap();
     let mut buffer = Vec::new();
     img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
     buffer
 }
 
 //接受form提交的图片，压缩之后返回
-async fn save_file(mut payload: Multipart) -> Result<HttpResponse, Error> {
+async fn form_image(mut payload: Multipart) -> Result<HttpResponse, Error> {
     let mut buffer = Vec::new();
     while let Ok(Some(mut field)) = payload.try_next().await {
         let content_type = field.content_disposition().unwrap();
         println!("content_type:{}", content_type);
-        let formName = content_type.get_name().unwrap();
+        let form_name = content_type.get_name().unwrap();
         //TODO：名称判断和类型判断
-        println!("name:{:?}", formName);
-        if formName == "file" {
+        println!("name:{:?}", form_name);
+        if form_name == "file" {
             while let Some(chunk) = field.next().await {
                 let data = chunk.unwrap();
                 buffer.extend_from_slice(&data);
             }
         }
     }
-    let buf2 = imageFN(&buffer);
+    let buf2 = image_fn(&buffer);
     Ok(HttpResponse::Ok().body(buf2))
-}
-
-fn index() -> HttpResponse {
-    let html = r#"<html>
-        <head><title>Upload Test</title></head>
-        <body>
-            <form target="/" method="post" enctype="multipart/form-data">
-                <input type="file" multiple name="file"/>
-                <input type="text" name="test"  />
-                <input type="submit" value="Submit"></button>
-            </form>
-        </body>
-    </html>"#;
-
-    HttpResponse::Ok().body(html)
 }
 
 //https://www.rectcircle.cn/posts/rust-actix/#3-urlencoded-body
 //下载文件
-fn index2() -> HttpResponse {
+fn curl_image() -> HttpResponse {
     let url="https://img5.daling.com/zin/public/specialTopic/2020/05/25/13/59/58/5254006B762DN6QUS000007436152.jpg";
 
     let mut buffer = Vec::new();
@@ -81,17 +63,32 @@ fn index2() -> HttpResponse {
         transfer.perform().unwrap();
     }
     println!("文件下载完成:{}", buffer.len());
-    let buf2 = imageFN(&buffer);
+    let buf2 = image_fn(&buffer);
     HttpResponse::Ok().body(buf2)
 }
-async fn index3(mut body: web::Payload) -> Result<HttpResponse, Error> {
+//直接上传文件
+async fn bin_image(mut body: web::Payload) -> Result<HttpResponse, Error> {
     let mut bytes = web::BytesMut::new();
     while let Some(item) = body.next().await {
         bytes.extend_from_slice(&item?);
     }
-
-    println!("Chunk: {:?}", bytes);
+    println!("Chunk: {:?}", bytes.len());
     Ok(HttpResponse::Ok().body(bytes))
+}
+
+fn index() -> HttpResponse {
+    let html = r#"<html>
+        <head><title>Upload Test</title></head>
+        <body>
+            <form target="/" method="post" enctype="multipart/form-data">
+                <input type="file" multiple name="file"/>
+                <input type="text" name="test"  />
+                <input type="submit" value="Submit"></button>
+            </form>
+        </body>
+    </html>"#;
+
+    HttpResponse::Ok().body(html)
 }
 
 #[actix_rt::main]
@@ -105,13 +102,10 @@ async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
             .wrap(middleware::Logger::default())
-            .service(
-                web::resource("/")
-                    .route(web::get().to(index))
-                    .route(web::post().to(save_file)),
-            )
-            .route("/test", web::get().to(index2))
-            .route("/test2", web::get().to(index3))
+            .service(web::resource("/").route(web::get().to(index)))
+            .route("/form", web::post().to(form_image))
+            .route("/curl", web::get().to(curl_image))
+            .route("/bin", web::get().to(bin_image))
     })
     .bind(ip)?
     .run()
