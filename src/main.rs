@@ -73,7 +73,8 @@ async fn bin_image(mut body: web::Payload) -> Result<HttpResponse, Error> {
         bytes.extend_from_slice(&item?);
     }
     println!("Chunk: {:?}", bytes.len());
-    Ok(HttpResponse::Ok().body(bytes))
+    let buf2 = image_fn(&bytes);
+    Ok(HttpResponse::Ok().body(buf2))
 }
 
 fn index() -> HttpResponse {
