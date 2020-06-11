@@ -20,6 +20,6 @@ fn zoom_image(from_buf: &[u8], width: u32, height: u32) -> Vec<u8> {
 
     let img2 = img.resize(width, height, FilterType::Lanczos3);
     let mut buffer = Vec::new();
-    img.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
+    img2.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
     buffer
 }
