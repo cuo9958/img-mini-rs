@@ -8,7 +8,6 @@ use actix_multipart::Multipart;
 
 use curl::easy::Easy;
 use qstring::QString;
-
 mod image_pro;
 
 //接受form提交的图片，压缩之后返回
@@ -27,7 +26,7 @@ async fn form_image(mut payload: Multipart) -> Result<HttpResponse, Error> {
             }
         }
     }
-    let buf2 = image_pro::image_fn(&buffer);
+    let buf2 = image_pro::image_pipe(&buffer, "");
     Ok(HttpResponse::Ok().body(buf2))
 }
 
@@ -54,7 +53,7 @@ fn curl_image() -> HttpResponse {
         transfer.perform().unwrap();
     }
     println!("文件下载完成:{}", buffer.len());
-    let buf2 = image_pro::image_fn(&buffer);
+    let buf2 = image_pro::image_pipe(&buffer, "");
     HttpResponse::Ok().body(buf2)
 }
 
@@ -62,14 +61,14 @@ fn curl_image() -> HttpResponse {
 async fn bin_image(mut body: web::Payload, req: HttpRequest) -> Result<HttpResponse, Error> {
     let qs = QString::from(req.query_string());
     print!("请求参数:{:?}", qs);
-    print!("请求a:{:?}", qs.get("a"));
+    print!("请求a:{:?}", qs.get("a").unwrap_or(""));
 
     let mut bytes = web::BytesMut::new();
     while let Some(item) = body.next().await {
         bytes.extend_from_slice(&item?);
     }
     println!("Chunk: {:?}", bytes.len());
-    let buf2 = image_pro::image_fn(&bytes);
+    let buf2 = image_pro::image_pipe(&bytes, qs.get("a").unwrap_or(""));
     Ok(HttpResponse::Ok().body(buf2))
 }
 
@@ -102,7 +101,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/").route(web::get().to(index)))
             .route("/form", web::post().to(form_image))
             .route("/curl", web::get().to(curl_image))
-            .route("/bin", web::get().to(bin_image))
+            .route("/bin", web::post().to(bin_image))
     })
     .bind(ip)?
     .run()
