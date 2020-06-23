@@ -1,12 +1,13 @@
 extern crate curl;
 extern crate image;
 
-use actix_web::{middleware, web, App, Error, HttpResponse, HttpServer};
+use actix_web::{middleware, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use futures::{StreamExt, TryStreamExt};
 
 use actix_multipart::Multipart;
 
 use curl::easy::Easy;
+use qstring::QString;
 
 mod image_pro;
 
@@ -56,8 +57,13 @@ fn curl_image() -> HttpResponse {
     let buf2 = image_pro::image_fn(&buffer);
     HttpResponse::Ok().body(buf2)
 }
+
 //直接上传文件
-async fn bin_image(mut body: web::Payload) -> Result<HttpResponse, Error> {
+async fn bin_image(mut body: web::Payload, req: HttpRequest) -> Result<HttpResponse, Error> {
+    let qs = QString::from(req.query_string());
+    print!("请求参数:{:?}", qs);
+    print!("请求a:{:?}", qs.get("a"));
+
     let mut bytes = web::BytesMut::new();
     while let Some(item) = body.next().await {
         bytes.extend_from_slice(&item?);
