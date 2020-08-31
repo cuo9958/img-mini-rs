@@ -10,9 +10,9 @@ use image::{GenericImage, ImageBuffer, ImageFormat};
 use std::str;
 
 pub fn image_pipe(from_buf: &[u8], c: &str) -> Vec<u8> {
-    println!("处理图片,{}", c);
-    if (c == "zoom") {
-        return zoom_image(from_buf, 100, 100);
+    match c {
+        "zoom" => return zoom_image(from_buf, 100, 100),
+        _ => println!("使用默认方法"),
     }
     return image_fn(from_buf);
 }
