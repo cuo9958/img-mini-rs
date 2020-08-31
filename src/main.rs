@@ -74,7 +74,7 @@ async fn bin_image(mut body: web::Payload, req: HttpRequest) -> Result<HttpRespo
 
 fn index() -> HttpResponse {
     let html = r#"<html>
-        <head><title>Upload Test</title></head>
+        <head><title>测试上传</title></head>
         <body>
             <form target="/" method="post" enctype="multipart/form-data">
                 <input type="file" multiple name="file"/>
