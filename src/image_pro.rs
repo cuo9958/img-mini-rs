@@ -6,7 +6,7 @@ extern crate image;
  */
 // use image::buffer::{EnumeratePixels, Pixels};
 use image::imageops::FilterType;
-use image::{GenericImage, ImageBuffer, ImageFormat};
+use image::{DynamicImage, GenericImage, ImageBuffer, ImageDecoder, ImageFormat, SubImage};
 use std::str;
 
 pub fn image_pipe(from_buf: &[u8], c: &str) -> Vec<u8> {
@@ -39,3 +39,15 @@ fn zoom_image(from_buf: &[u8], width: u32, height: u32) -> Vec<u8> {
     img2.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
     buffer
 }
+
+/**
+ * x、y位置处裁剪固定大小图片
+ */
+// fn cut_image(from_buf: &[u8], width: u32, height: u32, x1: u32, y1: u32) -> Vec<u8> {
+//     println!("从左上角{},{}处裁剪", x1, y1);
+//     let img = image::load_from_memory_with_format(from_buf, ImageFormat::Jpeg).unwrap();
+//     let img2 = img.sub_image(x1, y1, width, height);
+//     let mut buffer = Vec::new();
+//     img2.write_to(&mut buffer, ImageFormat::Jpeg).unwrap();
+//     buffer
+// }
